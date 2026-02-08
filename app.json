@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "GoNext",
+    "slug": "gonext",
+    "version": "1.0.0",
+    "scheme": "gonext",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.gonext.app"
+    },
+    "android": {
+      "package": "com.gonext.app"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# Зависимости
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Переменные окружения
+.env
+.env.local
+.env*.local
+
+# Логи
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
