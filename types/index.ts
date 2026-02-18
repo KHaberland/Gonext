@@ -8,7 +8,9 @@ export interface Place {
   description: string;
   visitLater: boolean;
   liked: boolean;
+  /** Широта в формате Decimal Degrees (DD), -90..90 */
   lat: number;
+  /** Долгота в формате Decimal Degrees (DD), -180..180 */
   lon: number;
   createdAt: string;
 }

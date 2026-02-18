@@ -5,7 +5,15 @@
 
 import * as SQLite from 'expo-sqlite';
 import { CREATE_TABLES } from './schema';
-import type { Place, Trip, TripPlace, PlacePhoto, TripPlacePhoto, Recording } from '../../types';
+import type {
+  Place,
+  Trip,
+  TripPlace,
+  PlacePhoto,
+  TripPlacePhoto,
+  Recording,
+  TripPlaceWithDetails,
+} from '../../types';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -138,6 +146,25 @@ export async function getCurrentTrip(): Promise<Trip | null> {
   return row ? rowToTrip(row) : null;
 }
 
+/** Следующее место: первое непосещённое в активной поездке */
+export async function getNextPlace(): Promise<{
+  trip: Trip;
+  tripPlace: TripPlace;
+  place: Place;
+} | null> {
+  const trip = await getCurrentTrip();
+  if (!trip) return null;
+
+  const tripPlaces = await getTripPlaces(trip.id);
+  const next = tripPlaces.find((tp) => !tp.visited);
+  if (!next) return null;
+
+  const place = await getPlaceById(next.placeId);
+  if (!place) return null;
+
+  return { trip, tripPlace: next, place };
+}
+
 export async function insertTrip(trip: Omit<Trip, 'id' | 'createdAt'>): Promise<number> {
   const database = db ?? await initDatabase();
   if (trip.current) {
@@ -196,6 +223,26 @@ export async function getTripPlaces(tripId: number): Promise<TripPlace[]> {
     [tripId]
   );
   return rows.map(rowToTripPlace);
+}
+
+export async function getTripPlacesWithDetails(tripId: number): Promise<TripPlaceWithDetails[]> {
+  const tripPlaces = await getTripPlaces(tripId);
+  const result: TripPlaceWithDetails[] = [];
+
+  for (const tp of tripPlaces) {
+    const [place, photos, recordings] = await Promise.all([
+      getPlaceById(tp.placeId),
+      getTripPlacePhotos(tp.id),
+      getRecordingsByTripPlaceId(tp.id),
+    ]);
+    result.push({
+      ...tp,
+      place: place ?? undefined,
+      photos,
+      recordings,
+    });
+  }
+  return result;
 }
 
 export async function getTripPlaceById(id: number): Promise<TripPlace | null> {

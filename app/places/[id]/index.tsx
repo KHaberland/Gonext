@@ -15,6 +15,7 @@ import {
   Menu,
   Text,
 } from 'react-native-paper';
+import { formatDD } from '../../../lib/coords';
 import {
   addPlacePhoto,
   deletePlacePhoto,
@@ -150,7 +151,7 @@ export default function PlaceDetailScreen() {
             </View>
             {(place.lat !== 0 || place.lon !== 0) && (
               <Text variant="bodySmall" style={styles.coords}>
-                {place.lat.toFixed(5)}, {place.lon.toFixed(5)}
+                {formatDD(place.lat, place.lon)}
               </Text>
             )}
           </Card.Content>

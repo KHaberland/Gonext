@@ -2,66 +2,62 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Switch, TextInput } from 'react-native-paper';
-import { formatDD, parseCoordinates, validateDD } from '../../../lib/coords';
-import { getPlaceById, updatePlace } from '../../../lib/db';
+import { getTripById, updateTrip } from '../../../lib/db';
 
-export default function EditPlaceScreen() {
+export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const placeId = parseInt(id ?? '0', 10);
-  const [name, setName] = useState('');
+  const tripId = parseInt(id ?? '0', 10);
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [coords, setCoords] = useState('');
-  const [visitLater, setVisitLater] = useState(true);
-  const [liked, setLiked] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [current, setCurrent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const loadPlace = useCallback(async () => {
-    if (!placeId) return;
+  const loadTrip = useCallback(async () => {
+    if (!tripId) return;
     try {
-      const place = await getPlaceById(placeId);
-      if (place) {
-        setName(place.name);
-        setDescription(place.description);
-        setCoords(place.lat !== 0 || place.lon !== 0 ? formatDD(place.lat, place.lon) : '');
-        setVisitLater(place.visitLater);
-        setLiked(place.liked);
+      const trip = await getTripById(tripId);
+      if (trip) {
+        setTitle(trip.title);
+        setDescription(trip.description);
+        setStartDate(trip.startDate.slice(0, 10));
+        setEndDate(trip.endDate.slice(0, 10));
+        setCurrent(trip.current);
       }
     } catch (e) {
-      console.error('Ошибка загрузки места:', e);
+      console.error('Ошибка загрузки поездки:', e);
     } finally {
       setLoading(false);
     }
-  }, [placeId]);
+  }, [tripId]);
 
   useEffect(() => {
-    loadPlace();
-  }, [loadPlace]);
+    loadTrip();
+  }, [loadTrip]);
 
   const handleSave = async () => {
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      Alert.alert('Ошибка', 'Введите название места');
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      Alert.alert('Ошибка', 'Введите название поездки');
       return;
     }
 
-    const { lat: latDD, lon: lonDD } = parseCoordinates(coords);
-    const validation = validateDD(latDD, lonDD);
-    if (!validation.valid) {
-      Alert.alert('Ошибка', validation.error);
+    if (startDate > endDate) {
+      Alert.alert('Ошибка', 'Дата начала не может быть позже даты окончания');
       return;
     }
 
     setSaving(true);
     try {
-      await updatePlace(placeId, {
-        name: trimmedName,
+      await updateTrip(tripId, {
+        title: trimmedTitle,
         description: description.trim(),
-        visitLater,
-        liked,
-        lat: latDD,
-        lon: lonDD,
+        startDate,
+        endDate,
+        current,
       });
       router.back();
     } catch (e) {
@@ -80,7 +76,7 @@ export default function EditPlaceScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Редактировать место" />
+        <Appbar.Content title="Редактировать поездку" />
       </Appbar.Header>
 
       <KeyboardAvoidingView
@@ -91,8 +87,8 @@ export default function EditPlaceScreen() {
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           <TextInput
             label="Название *"
-            value={name}
-            onChangeText={setName}
+            value={title}
+            onChangeText={setTitle}
             mode="outlined"
             style={styles.input}
           />
@@ -106,23 +102,25 @@ export default function EditPlaceScreen() {
             style={styles.input}
           />
           <TextInput
-            label="Координаты места"
-            value={coords}
-            onChangeText={setCoords}
+            label="Дата начала"
+            value={startDate}
+            onChangeText={setStartDate}
             mode="outlined"
-            placeholder="55.744920, 37.604677"
+            placeholder="YYYY-MM-DD"
+            style={styles.input}
+          />
+          <TextInput
+            label="Дата окончания"
+            value={endDate}
+            onChangeText={setEndDate}
+            mode="outlined"
+            placeholder="YYYY-MM-DD"
             style={styles.input}
           />
           <View style={styles.switchRow}>
-            <Switch value={visitLater} onValueChange={setVisitLater} />
-            <Button mode="text" onPress={() => setVisitLater(!visitLater)}>
-              Посетить позже
-            </Button>
-          </View>
-          <View style={styles.switchRow}>
-            <Switch value={liked} onValueChange={setLiked} />
-            <Button mode="text" onPress={() => setLiked(!liked)}>
-              Понравилось
+            <Switch value={current} onValueChange={setCurrent} />
+            <Button mode="text" onPress={() => setCurrent(!current)}>
+              Текущая поездка
             </Button>
           </View>
           <Button

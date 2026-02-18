@@ -1,28 +1,32 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Switch, TextInput } from 'react-native-paper';
-import { insertPlace } from '../../lib/db';
+import { parseCoordinates, validateDD } from '../../lib/coords';
+import { getTripPlaces, insertPlace, insertTripPlace } from '../../lib/db';
 
 export default function NewPlaceScreen() {
   const router = useRouter();
+  const { addToTrip } = useLocalSearchParams<{ addToTrip?: string }>();
+  const tripId = addToTrip ? parseInt(addToTrip, 10) : null;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [lat, setLat] = useState('0');
-  const [lon, setLon] = useState('0');
+  const [coords, setCoords] = useState('');
   const [visitLater, setVisitLater] = useState(true);
   const [liked, setLiked] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const parseCoord = (s: string): number => {
-    const n = parseFloat(s.replace(',', '.'));
-    return isNaN(n) ? 0 : n;
-  };
 
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
       Alert.alert('Ошибка', 'Введите название места');
+      return;
+    }
+
+    const { lat: latDD, lon: lonDD } = parseCoordinates(coords);
+    const validation = validateDD(latDD, lonDD);
+    if (!validation.valid) {
+      Alert.alert('Ошибка', validation.error);
       return;
     }
 
@@ -33,10 +37,24 @@ export default function NewPlaceScreen() {
         description: description.trim(),
         visitLater,
         liked,
-        lat: parseCoord(lat),
-        lon: parseCoord(lon),
+        lat: latDD,
+        lon: lonDD,
       });
-      router.replace(`/places/${id}`);
+      if (tripId) {
+        const existing = await getTripPlaces(tripId);
+        const maxOrder = existing.length > 0 ? Math.max(...existing.map((tp) => tp.order)) : -1;
+        await insertTripPlace({
+          tripId,
+          placeId: id,
+          order: maxOrder + 1,
+          visited: false,
+          visitDate: null,
+          notes: '',
+        });
+        router.replace(`/trips/${tripId}`);
+      } else {
+        router.replace(`/places/${id}`);
+      }
     } catch (e) {
       console.error('Ошибка сохранения:', e);
       Alert.alert('Ошибка', 'Не удалось сохранить место');
@@ -49,7 +67,7 @@ export default function NewPlaceScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Новое место" />
+        <Appbar.Content title={tripId ? 'Новое место в поездке' : 'Новое место'} />
       </Appbar.Header>
 
       <KeyboardAvoidingView
@@ -75,21 +93,11 @@ export default function NewPlaceScreen() {
             style={styles.input}
           />
           <TextInput
-            label="Широта"
-            value={lat}
-            onChangeText={setLat}
+            label="Координаты места"
+            value={coords}
+            onChangeText={setCoords}
             mode="outlined"
-            keyboardType="numeric"
-            placeholder="55.7558"
-            style={styles.input}
-          />
-          <TextInput
-            label="Долгота"
-            value={lon}
-            onChangeText={setLon}
-            mode="outlined"
-            keyboardType="numeric"
-            placeholder="37.6173"
+            placeholder="55.744920, 37.604677"
             style={styles.input}
           />
           <View style={styles.switchRow}>

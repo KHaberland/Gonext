@@ -1,6 +1,7 @@
 /**
  * SQL-схема базы данных GoNext.
  * Таблицы: places, trips, trip_places, place_photos, trip_place_photos, recordings.
+ * Координаты мест (lat, lon) хранятся в формате Decimal Degrees (DD): широта -90..90, долгота -180..180.
  */
 
 export const CREATE_TABLES = `
