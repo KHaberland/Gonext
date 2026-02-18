@@ -1,17 +1,9 @@
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import {
-  Appbar,
-  Button,
-  Snackbar,
-  Text,
-} from 'react-native-paper';
+import { Appbar, Button, Text } from 'react-native-paper';
 
 export default function HomeScreen() {
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-
-  const showSnackbar = () => setSnackbarVisible(true);
-  const hideSnackbar = () => setSnackbarVisible(false);
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
@@ -20,25 +12,40 @@ export default function HomeScreen() {
       </Appbar.Header>
 
       <View style={styles.content}>
-        <Text variant="titleLarge" style={styles.text}>
-          Привет, React Native Oleg!
+        <Text variant="titleLarge" style={styles.title}>
+          Главное меню
         </Text>
-        <Button mode="contained" onPress={showSnackbar} style={styles.button}>
-          Нажми меня
-        </Button>
+        <View style={styles.buttons}>
+          <Button
+            mode="contained"
+            onPress={() => router.push('/places')}
+            style={styles.button}
+          >
+            Места
+          </Button>
+          <Button
+            mode="contained"
+            onPress={() => router.push('/trips')}
+            style={styles.button}
+          >
+            Поездки
+          </Button>
+          <Button
+            mode="contained"
+            onPress={() => router.push('/next-place')}
+            style={styles.button}
+          >
+            Следующее место
+          </Button>
+          <Button
+            mode="contained"
+            onPress={() => router.push('/settings')}
+            style={styles.button}
+          >
+            Настройки
+          </Button>
+        </View>
       </View>
-
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={hideSnackbar}
-        duration={3000}
-        action={{
-          label: 'OK',
-          onPress: hideSnackbar,
-        }}
-      >
-        Кнопка нажата
-      </Snackbar>
     </View>
   );
 }
@@ -53,11 +60,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  text: {
-    marginBottom: 24,
+  title: {
+    marginBottom: 32,
     textAlign: 'center',
   },
+  buttons: {
+    gap: 16,
+    width: '100%',
+    maxWidth: 280,
+  },
   button: {
-    minWidth: 160,
+    minWidth: 200,
   },
 });
