@@ -2,7 +2,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   Alert,
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -25,15 +24,20 @@ import {
 import {
   addTripPlacePhoto,
   deleteTripPlacePhoto,
+  deleteRecording,
   getTripById,
   getTripPlacesWithDetails,
   getAllPlaces,
+  insertRecording,
   insertTripPlace,
   updateTripPlace,
   deleteTripPlace,
 } from '../../../lib/db';
+import { openInNavigatorWithChoice } from '../../../lib/navigator';
 import { pickAndSavePhoto } from '../../../lib/photo-utils';
 import type { Place, Trip, TripPlaceWithDetails } from '../../../types';
+import { PhotoViewer } from '../../../components/PhotoViewer';
+import { RecordingSection } from '../../../components/RecordingSection';
 
 function formatDate(s: string | null): string {
   if (!s) return '';
@@ -52,6 +56,7 @@ export default function TripDetailScreen() {
   const [expandedPlaceId, setExpandedPlaceId] = useState<number | null>(null);
   const [editingNotes, setEditingNotes] = useState<{ id: number; notes: string } | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [viewingPhotosTpId, setViewingPhotosTpId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     if (!tripId) return;
@@ -164,7 +169,7 @@ export default function TripDetailScreen() {
     if (uri) {
       try {
         await addTripPlacePhoto(tripPlaceId, uri);
-        loadData();
+        await loadData();
       } catch (e) {
         console.error('Ошибка добавления фото:', e);
         Alert.alert('Ошибка', 'Не удалось добавить фото');
@@ -172,7 +177,10 @@ export default function TripDetailScreen() {
     }
   };
 
-  const handleDeletePhoto = (photoId: number) => {
+  const handleDeletePhoto = (
+    photoId: number,
+    onAfterDelete?: () => void
+  ) => {
     Alert.alert('Удалить фото?', '', [
       { text: 'Отмена', style: 'cancel' },
       {
@@ -181,7 +189,8 @@ export default function TripDetailScreen() {
         onPress: async () => {
           try {
             await deleteTripPlacePhoto(photoId);
-            loadData();
+            await loadData();
+            onAfterDelete?.();
           } catch (e) {
             console.error('Ошибка удаления:', e);
           }
@@ -409,64 +418,66 @@ export default function TripDetailScreen() {
                       )}
                     </View>
 
-                    {tp.photos.length > 0 && (
-                      <View style={styles.photosSection}>
-                        <Text variant="labelMedium">Фото:</Text>
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={styles.photosRow}
-                        >
-                          {tp.photos.map((p) => (
-                            <View key={p.id} style={styles.photoWrap}>
-                              <Image
-                                source={{ uri: p.fileUri }}
-                                style={styles.photo}
-                                resizeMode="cover"
-                              />
-                              <IconButton
-                                icon="close"
-                                size={18}
-                                style={styles.photoDelete}
-                                onPress={() => handleDeletePhoto(p.id)}
-                              />
-                            </View>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
-
                     <View style={styles.placeActions}>
+                      {tp.photos.length > 0 && (
+                      <Button
+                        mode="outlined"
+                        icon="image-multiple"
+                        compact
+                        onPress={() => setViewingPhotosTpId(tp.id)}
+                      >
+                        Посмотреть фото ({tp.photos.length})
+                      </Button>
+                      )}
                       <AddPhotoButton
                         tripPlaceId={tp.id}
                         onAdd={handleAddPhoto}
                       />
-                      <Button
-                        mode="outlined"
-                        icon="microphone"
-                        compact
-                        onPress={() =>
-                          Alert.alert(
-                            'Голосовая запись',
-                            'Функция будет доступна в этапе 8 (Диктофон).'
-                          )
-                        }
-                      >
-                        Запись
-                      </Button>
                       {(tp.place?.lat !== 0 || tp.place?.lon !== 0) && (
-                        <Button
-                          mode="outlined"
-                          icon="map-marker"
-                          compact
-                          onPress={() =>
-                            router.push(`/places/${tp.placeId}/map`)
-                          }
-                        >
-                          Карта
-                        </Button>
+                        <>
+                          <Button
+                            mode="outlined"
+                            icon="map-marker"
+                            compact
+                            onPress={() =>
+                              router.push(`/places/${tp.placeId}/map`)
+                            }
+                          >
+                            Карта
+                          </Button>
+                          <Button
+                            mode="outlined"
+                            icon="navigation"
+                            compact
+                            onPress={() =>
+                              tp.place &&
+                              openInNavigatorWithChoice(
+                                tp.place.lat,
+                                tp.place.lon,
+                                tp.place.name
+                              )
+                            }
+                          >
+                            Навигатор
+                          </Button>
+                        </>
                       )}
                     </View>
+                    <RecordingSection
+                      recordings={tp.recordings}
+                      onRecordSaved={async (audioUri) => {
+                        await insertRecording({
+                          audioUri,
+                          tripPlaceId: tp.id,
+                        });
+                        await loadData();
+                      }}
+                      onDelete={async (id) => {
+                        await deleteRecording(id);
+                        await loadData();
+                      }}
+                      compact
+                    />
                   </Card.Content>
                 )}
               </Card>
@@ -481,6 +492,24 @@ export default function TripDetailScreen() {
         onPress={openAddPlaceModal}
         label="Добавить место"
       />
+
+      {(() => {
+        const tp = viewingPhotosTpId
+          ? places.find((p) => p.id === viewingPhotosTpId)
+          : null;
+        return (
+          <PhotoViewer
+            visible={!!tp && tp.photos.length > 0}
+            photos={tp?.photos.map((p) => ({ id: p.id, fileUri: p.fileUri })) ?? []}
+            onClose={() => setViewingPhotosTpId(null)}
+            onDelete={(id) =>
+              handleDeletePhoto(id, () => {
+                if (tp && tp.photos.length === 1) setViewingPhotosTpId(null);
+              })
+            }
+          />
+        );
+      })()}
 
       <Modal
         visible={addPlaceModalVisible}
@@ -650,30 +679,6 @@ const styles = StyleSheet.create({
   },
   notesInput: {
     marginBottom: 8,
-  },
-  photosSection: {
-    marginBottom: 12,
-  },
-  photosRow: {
-    gap: 8,
-    paddingVertical: 8,
-  },
-  photoWrap: {
-    position: 'relative',
-    width: 100,
-    height: 100,
-  },
-  photo: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-  },
-  photoDelete: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    margin: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   placeActions: {
     flexDirection: 'row',

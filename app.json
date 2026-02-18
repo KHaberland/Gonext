@@ -4,19 +4,25 @@
     "slug": "gonext",
     "version": "1.0.0",
     "scheme": "gonext",
-    "platforms": [
-      "ios",
-      "android"
-    ],
-    "ios": {
-      "bundleIdentifier": "com.gonext.app"
-    },
-    "android": {
-      "package": "com.gonext.app"
-    },
+    "platforms": ["ios", "android"],
+    "ios": { "bundleIdentifier": "com.gonext.app" },
+    "android": { "package": "com.gonext.app" },
     "plugins": [
       "expo-asset",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Доступ к фото для прикрепления к местам",
+          "savePhotosPermission": "Сохранение фото в галерею"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Доступ к микрофону для голосовых записей к местам и поездкам"
+        }
+      ]
     ]
   }
 }

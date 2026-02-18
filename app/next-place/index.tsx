@@ -1,9 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Card, Text } from 'react-native-paper';
 import { formatDD } from '../../lib/coords';
 import { getNextPlace } from '../../lib/db';
+import { openInNavigatorWithChoice } from '../../lib/navigator';
 
 export default function NextPlaceScreen() {
   const router = useRouter();
@@ -37,24 +38,13 @@ export default function NextPlaceScreen() {
     }
   };
 
-  const handleOpenNavigator = async () => {
+  const handleOpenNavigator = () => {
     if (!data?.place || !hasCoords) return;
-    const { lat, lon } = data.place;
-    const navUrl =
-      Platform.OS === 'android'
-        ? `google.navigation:q=${lat},${lon}`
-        : `maps://?daddr=${lat},${lon}`;
-    const geoUrl = `geo:${lat},${lon}`;
-    try {
-      await Linking.openURL(navUrl);
-    } catch {
-      try {
-        await Linking.openURL(geoUrl);
-      } catch (e) {
-        console.error('Ошибка открытия навигатора:', e);
-        Alert.alert('Ошибка', 'Не удалось открыть навигатор');
-      }
-    }
+    openInNavigatorWithChoice(
+      data.place.lat,
+      data.place.lon,
+      data.place.name
+    );
   };
 
   return (

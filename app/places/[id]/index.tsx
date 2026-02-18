@@ -2,7 +2,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   View,
@@ -16,14 +15,20 @@ import {
   Text,
 } from 'react-native-paper';
 import { formatDD } from '../../../lib/coords';
+import { openInNavigatorWithChoice } from '../../../lib/navigator';
 import {
   addPlacePhoto,
   deletePlacePhoto,
+  deleteRecording,
   getPlaceById,
   getPlacePhotos,
+  getRecordingsByPlaceId,
+  insertRecording,
 } from '../../../lib/db';
 import { pickAndSavePhoto } from '../../../lib/photo-utils';
 import type { Place, PlacePhoto } from '../../../types';
+import { PhotoViewer } from '../../../components/PhotoViewer';
+import { RecordingSection } from '../../../components/RecordingSection';
 
 export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,18 +36,22 @@ export default function PlaceDetailScreen() {
   const placeId = parseInt(id ?? '0', 10);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<PlacePhoto[]>([]);
+  const [recordings, setRecordings] = useState<Awaited<ReturnType<typeof getRecordingsByPlaceId>>>([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const [photoMenuVisible, setPhotoMenuVisible] = useState(false);
+  const [viewingPhotos, setViewingPhotos] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!placeId) return;
     try {
-      const [p, ph] = await Promise.all([
+      const [p, ph, recs] = await Promise.all([
         getPlaceById(placeId),
         getPlacePhotos(placeId),
+        getRecordingsByPlaceId(placeId),
       ]);
       setPlace(p ?? null);
       setPhotos(ph);
+      setRecordings(recs);
     } catch (e) {
       console.error('Ошибка загрузки:', e);
     }
@@ -60,7 +69,7 @@ export default function PlaceDetailScreen() {
     if (uri) {
       try {
         await addPlacePhoto(placeId, uri);
-        loadData();
+        await loadData();
       } catch (e) {
         console.error('Ошибка добавления фото:', e);
         Alert.alert('Ошибка', 'Не удалось добавить фото');
@@ -68,7 +77,10 @@ export default function PlaceDetailScreen() {
     }
   };
 
-  const handleDeletePhoto = (photoId: number) => {
+  const handleDeletePhoto = (
+    photoId: number,
+    onAfterDelete?: () => void
+  ) => {
     Alert.alert('Удалить фото?', '', [
       { text: 'Отмена', style: 'cancel' },
       {
@@ -77,7 +89,8 @@ export default function PlaceDetailScreen() {
         onPress: async () => {
           try {
             await deletePlacePhoto(photoId);
-            loadData();
+            await loadData();
+            onAfterDelete?.();
           } catch (e) {
             console.error('Ошибка удаления:', e);
           }
@@ -157,45 +170,38 @@ export default function PlaceDetailScreen() {
           </Card.Content>
         </Card>
 
-        {photos.length > 0 && (
-          <View style={styles.section}>
-            <Text variant="titleSmall" style={styles.sectionTitle}>
-              Фотографии
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.photosRow}
-            >
-              {photos.map((photo) => (
-                <View key={photo.id} style={styles.photoWrap}>
-                  <Image
-                    source={{ uri: photo.fileUri }}
-                    style={styles.photo}
-                    resizeMode="cover"
-                  />
-                  <IconButton
-                    icon="close"
-                    size={20}
-                    style={styles.photoDelete}
-                    onPress={() => handleDeletePhoto(photo.id)}
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
         <View style={styles.buttons}>
           {hasCoords && (
-            <Button
-              mode="outlined"
-              icon="map-marker"
-              onPress={() => router.push(`/places/${placeId}/map`)}
-              style={styles.button}
-            >
-              На карте
-            </Button>
+            <>
+              <Button
+                mode="outlined"
+                icon="map-marker"
+                onPress={() => router.push(`/places/${placeId}/map`)}
+                style={styles.button}
+              >
+                На карте
+              </Button>
+              <Button
+                mode="outlined"
+                icon="navigation"
+                onPress={() =>
+                  openInNavigatorWithChoice(place.lat, place.lon, place.name)
+                }
+                style={styles.button}
+              >
+                Открыть в навигаторе
+              </Button>
+            </>
+          )}
+          {photos.length > 0 && (
+          <Button
+            mode="outlined"
+            icon="image-multiple"
+            onPress={() => setViewingPhotos(true)}
+            style={styles.button}
+          >
+            Посмотреть фото ({photos.length})
+          </Button>
           )}
           <Menu
             visible={photoMenuVisible}
@@ -207,7 +213,7 @@ export default function PlaceDetailScreen() {
                 onPress={() => setPhotoMenuVisible(true)}
                 style={styles.button}
               >
-                Добавить фото
+                {photos.length > 0 ? 'Ещё фото' : 'Добавить фото'}
               </Button>
             }
           >
@@ -222,22 +228,30 @@ export default function PlaceDetailScreen() {
               leadingIcon="image"
             />
           </Menu>
-          <Button
-            mode="outlined"
-            icon="microphone"
-            onPress={() => {
-              // Этап 8 — диктофон
-              Alert.alert(
-                'Голосовая запись',
-                'Функция будет доступна в этапе 8 (Диктофон).'
-              );
+          <RecordingSection
+            recordings={recordings}
+            onRecordSaved={async (audioUri) => {
+              await insertRecording({ audioUri, placeId });
+              await loadData();
             }}
-            style={styles.button}
-          >
-            Голосовая запись
-          </Button>
+            onDelete={async (id) => {
+              await deleteRecording(id);
+              await loadData();
+            }}
+          />
         </View>
       </ScrollView>
+
+      <PhotoViewer
+        visible={viewingPhotos}
+        photos={photos.map((p) => ({ id: p.id, fileUri: p.fileUri }))}
+        onClose={() => setViewingPhotos(false)}
+        onDelete={(id) =>
+          handleDeletePhoto(id, () => {
+            if (photos.length === 1) setViewingPhotos(false);
+          })
+        }
+      />
     </View>
   );
 }
@@ -279,33 +293,6 @@ const styles = StyleSheet.create({
   coords: {
     marginTop: 8,
     color: '#666',
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-  },
-  photosRow: {
-    gap: 8,
-    paddingVertical: 8,
-  },
-  photoWrap: {
-    position: 'relative',
-    width: 120,
-    height: 120,
-  },
-  photo: {
-    width: 120,
-    height: 120,
-    borderRadius: 8,
-  },
-  photoDelete: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    margin: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   buttons: {
     gap: 12,
