@@ -6,6 +6,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
+import { Alert } from 'react-native';
 
 function getPhotosDir(): string {
   const base = FileSystem.documentDirectory;
@@ -41,6 +42,12 @@ export async function pickAndSavePhoto(
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
   if (!permission.granted) {
+    Alert.alert(
+      'Нет доступа',
+      source === 'camera'
+        ? 'Разрешите доступ к камере в настройках приложения.'
+        : 'Разрешите доступ к фото в настройках приложения.'
+    );
     return null;
   }
 

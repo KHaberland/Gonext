@@ -42,7 +42,7 @@ export function RecordingSection({
 
   const handleStartRecording = useCallback(async () => {
     const recording = await startRecording({
-      onStateChange: setIsRecording.bind(null, true),
+      onStateChange: (state) => setIsRecording(state === 'recording'),
       onDurationUpdate: setDurationMs,
     });
     if (recording) {
