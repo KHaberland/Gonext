@@ -41,6 +41,14 @@ export default function HomeScreen() {
           </Button>
           <Button
             mode="contained"
+            icon="image-multiple"
+            onPress={() => router.push('/all-photos')}
+            style={styles.button}
+          >
+            {t('home.allPhotos')}
+          </Button>
+          <Button
+            mode="contained"
             onPress={() => router.push('/settings')}
             style={styles.button}
           >

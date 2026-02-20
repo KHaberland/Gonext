@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Appbar, Divider, List, SegmentedButtons, Text } from 'react-native-paper';
+import { ActivityIndicator, Appbar, Divider, Icon, List, SegmentedButtons, Text, useTheme } from 'react-native-paper';
 import { getAllTrips, getCurrentTrip, updateTrip } from '../../lib/db';
 import { LANGUAGES, setLanguage, type LanguageCode } from '../../lib/i18n';
 import { PRESET_COLORS, useThemeMode } from '../../lib/theme';
@@ -12,7 +12,8 @@ import type { Trip } from '../../types';
 export default function SettingsScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { theme, themeMode, setThemeMode, primaryColor, setPrimaryColor } = useThemeMode();
+  const theme = useTheme();
+  const { themeMode, setThemeMode, primaryColor, setPrimaryColor } = useThemeMode();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [currentTripId, setCurrentTripId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,10 +124,16 @@ export default function SettingsScreen() {
         <Divider style={styles.divider} />
 
         <List.Section>
-          <List.Subheader>{t('settings.currentTrip')}</List.Subheader>
-          <Text variant="bodySmall" style={styles.hint}>
-            {t('settings.currentTripHint')}
-          </Text>
+          <View style={[styles.labelButton, { backgroundColor: theme.colors.primary }]}>
+            <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+              {t('settings.currentTrip')}
+            </Text>
+          </View>
+          <View style={[styles.labelButton, { backgroundColor: theme.colors.primary }]}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onPrimary }}>
+              {t('settings.currentTripHint')}
+            </Text>
+          </View>
           {loading ? (
             <List.Item
               title={t('common.loading')}
@@ -134,34 +141,65 @@ export default function SettingsScreen() {
               right={() => <ActivityIndicator size="small" />}
             />
           ) : trips.length === 0 ? (
-            <List.Item
-              title={t('settings.noTrips')}
-              description={t('settings.noTripsHint')}
-              left={(props) => <List.Icon {...props} icon="map-marker-outline" />}
+            <Pressable
               onPress={() => router.push('/trips')}
-            />
+              style={[styles.tripItemButton, { backgroundColor: theme.colors.primary }]}
+            >
+              <View style={styles.tripItemRow}>
+                <Icon source="map-marker-outline" size={24} color={theme.colors.onPrimary} />
+                <View style={styles.tripItemText}>
+                  <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+                    {t('settings.noTrips')}
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onPrimary, opacity: 0.9 }}>
+                    {t('settings.noTripsHint')}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
           ) : (
             <>
               {trips.map((trip) => (
-                <List.Item
+                <Pressable
                   key={trip.id}
-                  title={trip.title}
-                  description={trip.startDate ? t('trips.fromDate', { date: trip.startDate.slice(0, 10) }) : undefined}
-                  left={(props) => (
-                    <List.Icon
-                      {...props}
-                      icon={currentTripId === trip.id ? 'radiobox-marked' : 'radiobox-blank'}
-                    />
-                  )}
                   onPress={() => handleSelectCurrentTrip(trip)}
-                />
+                  style={[styles.tripItemButton, { backgroundColor: theme.colors.primary }]}
+                >
+                  <View style={styles.tripItemRow}>
+                    <Icon
+                      source={currentTripId === trip.id ? 'radiobox-marked' : 'radiobox-blank'}
+                      size={24}
+                      color={theme.colors.onPrimary}
+                    />
+                    <View style={styles.tripItemText}>
+                      <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+                        {trip.title}
+                      </Text>
+                      {trip.startDate && (
+                        <Text variant="bodySmall" style={{ color: theme.colors.onPrimary, opacity: 0.9 }}>
+                          {t('trips.fromDate', { date: trip.startDate.slice(0, 10) })}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                </Pressable>
               ))}
               {currentTripId !== null && (
-                <List.Item
-                  title={t('settings.resetCurrentTrip')}
-                  left={(props) => <List.Icon {...props} icon="close-circle-outline" />}
+                <Pressable
                   onPress={handleClearCurrentTrip}
-                />
+                  style={[styles.resetTripButton, { backgroundColor: theme.colors.primary }]}
+                >
+                  <View style={styles.tripItemRow}>
+                    <Icon
+                      source="close-circle-outline"
+                      size={20}
+                      color={theme.colors.onPrimary}
+                    />
+                    <Text variant="labelMedium" style={{ color: theme.colors.onPrimary }}>
+                      {t('settings.resetCurrentTrip')}
+                    </Text>
+                  </View>
+                </Pressable>
               )}
             </>
           )}
@@ -170,17 +208,27 @@ export default function SettingsScreen() {
         <Divider style={styles.divider} />
 
         <List.Section>
-          <List.Subheader>{t('settings.about')}</List.Subheader>
-          <List.Item
-            title="GoNext"
-            description={t('settings.aboutDescription')}
-            left={(props) => <List.Icon {...props} icon="information-outline" />}
-          />
-          <List.Item
-            title={t('settings.version')}
-            description={appVersion}
-            left={(props) => <List.Icon {...props} icon="tag-outline" />}
-          />
+          <View style={[styles.labelButton, { backgroundColor: theme.colors.primary }]}>
+            <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+              {t('settings.about')}
+            </Text>
+          </View>
+          <View style={[styles.labelButton, { backgroundColor: theme.colors.primary }]}>
+            <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+              GoNext
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onPrimary, marginTop: 4 }}>
+              {t('settings.aboutDescription')}
+            </Text>
+          </View>
+          <View style={[styles.labelButton, { backgroundColor: theme.colors.primary }]}>
+            <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+              {t('settings.version')}
+            </Text>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onPrimary, marginTop: 4 }}>
+              {appVersion}
+            </Text>
+          </View>
         </List.Section>
       </ScrollView>
     </View>
@@ -220,5 +268,39 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: 16,
+  },
+  labelButton: {
+    alignSelf: 'stretch',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  tripItemButton: {
+    alignSelf: 'stretch',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginLeft: 32,
+    marginRight: 16,
+    marginBottom: 8,
+  },
+  resetTripButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    marginLeft: 32,
+    marginRight: 16,
+    marginBottom: 8,
+  },
+  tripItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  tripItemText: {
+    flex: 1,
   },
 });

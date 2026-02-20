@@ -119,6 +119,39 @@ export async function deletePlacePhoto(id: number): Promise<void> {
   await database.runAsync('DELETE FROM place_photos WHERE id = ?', [id]);
 }
 
+/** Все фото из мест и поездок (для экрана «Все фото») */
+export interface AllPhotoItem {
+  id: string;
+  photoId: number;
+  fileUri: string;
+  source: 'place' | 'trip';
+}
+
+export async function getAllPhotos(): Promise<AllPhotoItem[]> {
+  const database = db ?? await initDatabase();
+  const placeRows = await database.getAllAsync<{ id: number; file_uri: string }>(
+    'SELECT id, file_uri FROM place_photos'
+  );
+  const tripRows = await database.getAllAsync<{ id: number; file_uri: string }>(
+    'SELECT id, file_uri FROM trip_place_photos'
+  );
+  const result: AllPhotoItem[] = [
+    ...placeRows.map((r) => ({
+      id: `place_${r.id}`,
+      photoId: r.id,
+      fileUri: r.file_uri,
+      source: 'place' as const,
+    })),
+    ...tripRows.map((r) => ({
+      id: `trip_${r.id}`,
+      photoId: r.id,
+      fileUri: r.file_uri,
+      source: 'trip' as const,
+    })),
+  ];
+  return result;
+}
+
 // --- Trips ---
 
 export async function getAllTrips(): Promise<Trip[]> {

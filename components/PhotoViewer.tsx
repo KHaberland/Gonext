@@ -3,7 +3,7 @@
  * Свайп между фото, удаление по кнопке. Закрытие по нажатию на тёмную область.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -26,6 +26,8 @@ interface PhotoViewerProps {
   photos: PhotoItem[];
   onClose: () => void;
   onDelete?: (photoId: number) => void;
+  /** Начальный индекс при открытии (по умолчанию 0) */
+  initialIndex?: number;
 }
 
 function ensureImageUri(uri: string): string {
@@ -38,9 +40,16 @@ export function PhotoViewer({
   photos,
   onClose,
   onDelete,
+  initialIndex = 0,
 }: PhotoViewerProps) {
   const insets = useSafeAreaInsets();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (visible) {
+      setCurrentIndex(Math.min(initialIndex, Math.max(0, photos.length - 1)));
+    }
+  }, [visible, initialIndex, photos.length]);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
@@ -98,10 +107,17 @@ export function PhotoViewer({
           </View>
           <View style={styles.imageWrap} pointerEvents="auto">
             <FlatList
+              key={`viewer-${initialIndex}`}
               data={photos}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
+              initialScrollIndex={Math.min(initialIndex, Math.max(0, photos.length - 1))}
+              getItemLayout={(_, index) => ({
+                length: width,
+                offset: width * index,
+                index,
+              })}
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
               keyExtractor={(item) => String(item.id)}

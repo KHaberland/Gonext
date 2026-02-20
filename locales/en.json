@@ -13,7 +13,12 @@
     "places": "Places",
     "trips": "Trips",
     "nextPlace": "Next place",
+    "allPhotos": "All photos",
     "settings": "Settings"
+  },
+  "allPhotos": {
+    "title": "All photos",
+    "noPhotos": "No saved photos. Add photos to places or trips."
   },
   "places": {
     "title": "Places",
