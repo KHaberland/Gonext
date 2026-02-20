@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Switch, TextInput } from 'react-native-paper';
 import { getTripById, updateTrip } from '../../../lib/db';
@@ -7,6 +8,7 @@ import { getTripById, updateTrip } from '../../../lib/db';
 export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const tripId = parseInt(id ?? '0', 10);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -41,12 +43,12 @@ export default function EditTripScreen() {
   const handleSave = async () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
-      Alert.alert('Ошибка', 'Введите название поездки');
+      Alert.alert(t('common.error'), t('trips.errorNameRequired'));
       return;
     }
 
     if (startDate > endDate) {
-      Alert.alert('Ошибка', 'Дата начала не может быть позже даты окончания');
+      Alert.alert(t('common.error'), t('trips.errorDateRange'));
       return;
     }
 
@@ -62,7 +64,7 @@ export default function EditTripScreen() {
       router.back();
     } catch (e) {
       console.error('Ошибка сохранения:', e);
-      Alert.alert('Ошибка', 'Не удалось сохранить изменения');
+      Alert.alert(t('common.error'), t('trips.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -76,7 +78,7 @@ export default function EditTripScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Редактировать поездку" />
+        <Appbar.Content title={t('trips.editTrip')} />
       </Appbar.Header>
 
       <KeyboardAvoidingView
@@ -86,14 +88,14 @@ export default function EditTripScreen() {
       >
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           <TextInput
-            label="Название *"
+            label={t('trips.name')}
             value={title}
             onChangeText={setTitle}
             mode="outlined"
             style={styles.input}
           />
           <TextInput
-            label="Описание"
+            label={t('trips.description')}
             value={description}
             onChangeText={setDescription}
             mode="outlined"
@@ -102,7 +104,7 @@ export default function EditTripScreen() {
             style={styles.input}
           />
           <TextInput
-            label="Дата начала"
+            label={t('trips.startDate')}
             value={startDate}
             onChangeText={setStartDate}
             mode="outlined"
@@ -110,7 +112,7 @@ export default function EditTripScreen() {
             style={styles.input}
           />
           <TextInput
-            label="Дата окончания"
+            label={t('trips.endDate')}
             value={endDate}
             onChangeText={setEndDate}
             mode="outlined"
@@ -120,7 +122,7 @@ export default function EditTripScreen() {
           <View style={styles.switchRow}>
             <Switch value={current} onValueChange={setCurrent} />
             <Button mode="text" onPress={() => setCurrent(!current)}>
-              Текущая поездка
+              {t('trips.currentTrip')}
             </Button>
           </View>
           <Button
@@ -130,7 +132,7 @@ export default function EditTripScreen() {
             disabled={saving}
             style={styles.saveButton}
           >
-            Сохранить
+            {t('common.save')}
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>

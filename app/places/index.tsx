@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, FAB, List, Text } from 'react-native-paper';
 import { getAllPlaces } from '../../lib/db';
@@ -7,6 +8,7 @@ import type { Place } from '../../types';
 
 export default function PlacesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +41,7 @@ export default function PlacesScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Места" />
+        <Appbar.Content title={t('places.title')} />
       </Appbar.Header>
 
       <ScrollView
@@ -51,11 +53,11 @@ export default function PlacesScreen() {
       >
         {loading ? (
           <Text variant="bodyLarge" style={styles.empty}>
-            Загрузка...
+            {t('common.loading')}
           </Text>
         ) : places.length === 0 ? (
           <Text variant="bodyLarge" style={styles.empty}>
-            Нет мест. Добавьте первое место.
+            {t('places.noPlaces')}
           </Text>
         ) : (
           places.map((place) => (
@@ -80,7 +82,7 @@ export default function PlacesScreen() {
         icon="plus"
         style={styles.fab}
         onPress={() => router.push('/places/new')}
-        label="Добавить место"
+        label={t('places.addPlace')}
       />
     </View>
   );

@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Switch, TextInput } from 'react-native-paper';
 import { parseCoordinates, validateDD } from '../../lib/coords';
@@ -7,6 +8,7 @@ import { getTripPlaces, insertPlace, insertTripPlace } from '../../lib/db';
 
 export default function NewPlaceScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { addToTrip } = useLocalSearchParams<{ addToTrip?: string }>();
   const tripId = addToTrip ? parseInt(addToTrip, 10) : null;
   const [name, setName] = useState('');
@@ -19,14 +21,14 @@ export default function NewPlaceScreen() {
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      Alert.alert('Ошибка', 'Введите название места');
+      Alert.alert(t('common.error'), t('places.errorNameRequired'));
       return;
     }
 
     const { lat: latDD, lon: lonDD } = parseCoordinates(coords);
     const validation = validateDD(latDD, lonDD);
     if (!validation.valid) {
-      Alert.alert('Ошибка', validation.error);
+      Alert.alert(t('common.error'), t(validation.errorKey, validation.errorParams));
       return;
     }
 
@@ -57,7 +59,7 @@ export default function NewPlaceScreen() {
       }
     } catch (e) {
       console.error('Ошибка сохранения:', e);
-      Alert.alert('Ошибка', 'Не удалось сохранить место');
+      Alert.alert(t('common.error'), t('places.errorSavePlace'));
     } finally {
       setSaving(false);
     }
@@ -67,7 +69,7 @@ export default function NewPlaceScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={tripId ? 'Новое место в поездке' : 'Новое место'} />
+        <Appbar.Content title={tripId ? t('places.newPlaceInTrip') : t('places.newPlace')} />
       </Appbar.Header>
 
       <KeyboardAvoidingView
@@ -77,14 +79,14 @@ export default function NewPlaceScreen() {
       >
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           <TextInput
-            label="Название *"
+            label={t('places.name')}
             value={name}
             onChangeText={setName}
             mode="outlined"
             style={styles.input}
           />
           <TextInput
-            label="Описание"
+            label={t('places.description')}
             value={description}
             onChangeText={setDescription}
             mode="outlined"
@@ -93,23 +95,23 @@ export default function NewPlaceScreen() {
             style={styles.input}
           />
           <TextInput
-            label="Координаты места"
+            label={t('places.coords')}
             value={coords}
             onChangeText={setCoords}
             mode="outlined"
-            placeholder="55.744920, 37.604677"
+            placeholder={t('places.coordsPlaceholder')}
             style={styles.input}
           />
           <View style={styles.switchRow}>
             <Switch value={visitLater} onValueChange={setVisitLater} />
             <Button mode="text" onPress={() => setVisitLater(!visitLater)}>
-              Посетить позже
+              {t('places.visitLater')}
             </Button>
           </View>
           <View style={styles.switchRow}>
             <Switch value={liked} onValueChange={setLiked} />
             <Button mode="text" onPress={() => setLiked(!liked)}>
-              Понравилось
+              {t('places.liked')}
             </Button>
           </View>
           <Button
@@ -119,7 +121,7 @@ export default function NewPlaceScreen() {
             disabled={saving}
             style={styles.saveButton}
           >
-            Сохранить
+            {t('common.save')}
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>

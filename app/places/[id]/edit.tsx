@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Switch, TextInput } from 'react-native-paper';
 import { formatDD, parseCoordinates, validateDD } from '../../../lib/coords';
@@ -8,6 +9,7 @@ import { getPlaceById, updatePlace } from '../../../lib/db';
 export default function EditPlaceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const placeId = parseInt(id ?? '0', 10);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -42,14 +44,14 @@ export default function EditPlaceScreen() {
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      Alert.alert('Ошибка', 'Введите название места');
+      Alert.alert(t('common.error'), t('places.errorNameRequired'));
       return;
     }
 
     const { lat: latDD, lon: lonDD } = parseCoordinates(coords);
     const validation = validateDD(latDD, lonDD);
     if (!validation.valid) {
-      Alert.alert('Ошибка', validation.error);
+      Alert.alert(t('common.error'), t(validation.errorKey, validation.errorParams));
       return;
     }
 
@@ -66,7 +68,7 @@ export default function EditPlaceScreen() {
       router.back();
     } catch (e) {
       console.error('Ошибка сохранения:', e);
-      Alert.alert('Ошибка', 'Не удалось сохранить изменения');
+      Alert.alert(t('common.error'), t('places.errorSave'));
     } finally {
       setSaving(false);
     }
@@ -80,7 +82,7 @@ export default function EditPlaceScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Редактировать место" />
+        <Appbar.Content title={t('places.editPlace')} />
       </Appbar.Header>
 
       <KeyboardAvoidingView
@@ -90,14 +92,14 @@ export default function EditPlaceScreen() {
       >
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           <TextInput
-            label="Название *"
+            label={t('places.name')}
             value={name}
             onChangeText={setName}
             mode="outlined"
             style={styles.input}
           />
           <TextInput
-            label="Описание"
+            label={t('places.description')}
             value={description}
             onChangeText={setDescription}
             mode="outlined"
@@ -106,23 +108,23 @@ export default function EditPlaceScreen() {
             style={styles.input}
           />
           <TextInput
-            label="Координаты места"
+            label={t('places.coords')}
             value={coords}
             onChangeText={setCoords}
             mode="outlined"
-            placeholder="55.744920, 37.604677"
+            placeholder={t('places.coordsPlaceholder')}
             style={styles.input}
           />
           <View style={styles.switchRow}>
             <Switch value={visitLater} onValueChange={setVisitLater} />
             <Button mode="text" onPress={() => setVisitLater(!visitLater)}>
-              Посетить позже
+              {t('places.visitLater')}
             </Button>
           </View>
           <View style={styles.switchRow}>
             <Switch value={liked} onValueChange={setLiked} />
             <Button mode="text" onPress={() => setLiked(!liked)}>
-              Понравилось
+              {t('places.liked')}
             </Button>
           </View>
           <Button
@@ -132,7 +134,7 @@ export default function EditPlaceScreen() {
             disabled={saving}
             style={styles.saveButton}
           >
-            Сохранить
+            {t('common.save')}
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>

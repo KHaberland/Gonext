@@ -39,14 +39,21 @@ export function parseCoordinates(s: string): { lat: number; lon: number } {
 }
 
 /**
+ * Результат валидации координат. При ошибке возвращается ключ для i18n.
+ */
+export type ValidateDDResult =
+  | { valid: true }
+  | { valid: false; errorKey: string; errorParams: { min: number; max: number } };
+
+/**
  * Проверяет, что координаты в допустимом диапазоне DD.
  */
-export function validateDD(lat: number, lon: number): { valid: boolean; error?: string } {
+export function validateDD(lat: number, lon: number): ValidateDDResult {
   if (lat < DD_LAT_MIN || lat > DD_LAT_MAX) {
-    return { valid: false, error: `Широта должна быть от ${DD_LAT_MIN} до ${DD_LAT_MAX}` };
+    return { valid: false, errorKey: 'coords.latRange', errorParams: { min: DD_LAT_MIN, max: DD_LAT_MAX } };
   }
   if (lon < DD_LON_MIN || lon > DD_LON_MAX) {
-    return { valid: false, error: `Долгота должна быть от ${DD_LON_MIN} до ${DD_LON_MAX}` };
+    return { valid: false, errorKey: 'coords.lonRange', errorParams: { min: DD_LON_MIN, max: DD_LON_MAX } };
   }
   return { valid: true };
 }

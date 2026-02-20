@@ -1,5 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Modal,
@@ -47,6 +48,7 @@ function formatDate(s: string | null): string {
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const tripId = parseInt(id ?? '0', 10);
   const [trip, setTrip] = useState<Trip | null>(null);
   const [places, setPlaces] = useState<TripPlaceWithDetails[]>([]);
@@ -95,7 +97,7 @@ export default function TripDetailScreen() {
   const handleAddPlace = async (placeId: number) => {
     const exists = places.some((tp) => tp.placeId === placeId);
     if (exists) {
-      Alert.alert('Место уже в маршруте');
+      Alert.alert(t('trips.placeAlreadyInRoute'));
       return;
     }
     try {
@@ -112,7 +114,7 @@ export default function TripDetailScreen() {
       loadData();
     } catch (e) {
       console.error('Ошибка добавления:', e);
-      Alert.alert('Ошибка', 'Не удалось добавить место');
+      Alert.alert(t('common.error'), t('trips.errorAddPlace'));
     }
   };
 
@@ -172,7 +174,7 @@ export default function TripDetailScreen() {
         await loadData();
       } catch (e) {
         console.error('Ошибка добавления фото:', e);
-        Alert.alert('Ошибка', 'Не удалось добавить фото');
+        Alert.alert(t('common.error'), t('places.errorAddPhoto'));
       }
     }
   };
@@ -181,10 +183,10 @@ export default function TripDetailScreen() {
     photoId: number,
     onAfterDelete?: () => void
   ) => {
-    Alert.alert('Удалить фото?', '', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('places.deletePhotoConfirm'), '', [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Удалить',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -200,10 +202,10 @@ export default function TripDetailScreen() {
   };
 
   const handleRemovePlace = (tp: TripPlaceWithDetails) => {
-    Alert.alert('Удалить место из маршрута?', tp.place?.name ?? '', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('trips.deletePlaceConfirm'), tp.place?.name ?? '', [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Удалить',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -231,10 +233,10 @@ export default function TripDetailScreen() {
       <View style={styles.container}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => router.back()} />
-          <Appbar.Content title="Поездка" />
+          <Appbar.Content title={t('trips.trip')} />
         </Appbar.Header>
         <View style={styles.centered}>
-          <Text variant="bodyLarge">Загрузка...</Text>
+          <Text variant="bodyLarge">{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -260,7 +262,7 @@ export default function TripDetailScreen() {
               setMenuVisible(false);
               router.push(`/trips/${tripId}/edit`);
             }}
-            title="Редактировать"
+            title={t('common.edit')}
             leadingIcon="pencil"
           />
         </Menu>
@@ -279,7 +281,7 @@ export default function TripDetailScreen() {
             </Text>
             {trip.current && (
               <Chip compact style={styles.chip}>
-                Текущая поездка
+                {t('trips.currentTrip')}
               </Chip>
             )}
           </Card.Content>
@@ -289,8 +291,8 @@ export default function TripDetailScreen() {
           value={viewMode}
           onValueChange={(v) => setViewMode(v as 'plan' | 'diary')}
           buttons={[
-            { value: 'plan', label: 'План', icon: 'format-list-bulleted' },
-            { value: 'diary', label: 'Дневник', icon: 'book-open-variant' },
+            { value: 'plan', label: t('trips.plan'), icon: 'format-list-bulleted' },
+            { value: 'diary', label: t('trips.diary'), icon: 'book-open-variant' },
           ]}
           style={styles.segmented}
         />
@@ -298,8 +300,8 @@ export default function TripDetailScreen() {
         {filteredPlaces.length === 0 ? (
           <Text variant="bodyLarge" style={styles.empty}>
             {viewMode === 'plan'
-              ? 'Нет мест в маршруте. Добавьте места.'
-              : 'Нет посещённых мест. Отметьте места как посещённые.'}
+              ? t('trips.noPlacesInRoute')
+              : t('trips.noVisitedPlaces')}
           </Text>
         ) : (
           filteredPlaces.map((tp, index) => {
@@ -309,10 +311,10 @@ export default function TripDetailScreen() {
             return (
               <Card key={tp.id} style={styles.placeCard}>
                 <List.Item
-                  title={tp.place?.name ?? `Место #${tp.placeId}`}
+                  title={tp.place?.name ?? t('trips.placeNumber', { id: tp.placeId })}
                   description={
                     viewMode === 'diary' && tp.visitDate
-                      ? `Посещено: ${formatDate(tp.visitDate)}`
+                      ? t('trips.visitedOn', { date: formatDate(tp.visitDate) })
                       : undefined
                   }
                   left={(props) => (
@@ -368,7 +370,7 @@ export default function TripDetailScreen() {
                     ) : null}
 
                     <View style={styles.visitedRow}>
-                      <Text variant="labelMedium">Дата визита:</Text>
+                      <Text variant="labelMedium">{t('trips.visitDate')}</Text>
                       <TextInput
                         mode="outlined"
                         value={tp.visitDate?.slice(0, 10) ?? ''}
@@ -382,7 +384,7 @@ export default function TripDetailScreen() {
                     </View>
 
                     <View style={styles.notesRow}>
-                      <Text variant="labelMedium">Заметки:</Text>
+                      <Text variant="labelMedium">{t('trips.notes')}</Text>
                       {editingNotes?.id === tp.id ? (
                         <View style={styles.notesEdit}>
                           <TextInput
@@ -400,7 +402,7 @@ export default function TripDetailScreen() {
                               saveNotes(tp.id, editingNotes.notes)
                             }
                           >
-                            Сохранить
+                            {t('common.save')}
                           </Button>
                         </View>
                       ) : (
@@ -413,7 +415,7 @@ export default function TripDetailScreen() {
                             })
                           }
                         >
-                          {tp.notes ? tp.notes : 'Добавить заметки'}
+                          {tp.notes ? tp.notes : t('trips.addNotes')}
                         </Button>
                       )}
                     </View>
@@ -426,7 +428,7 @@ export default function TripDetailScreen() {
                         compact
                         onPress={() => setViewingPhotosTpId(tp.id)}
                       >
-                        Посмотреть фото ({tp.photos.length})
+                        {t('places.viewPhotos')} ({tp.photos.length})
                       </Button>
                       )}
                       <AddPhotoButton
@@ -443,7 +445,7 @@ export default function TripDetailScreen() {
                               router.push(`/places/${tp.placeId}/map`)
                             }
                           >
-                            Карта
+                            {t('trips.map')}
                           </Button>
                           <Button
                             mode="outlined"
@@ -458,7 +460,7 @@ export default function TripDetailScreen() {
                               )
                             }
                           >
-                            Навигатор
+                            {t('trips.navigator')}
                           </Button>
                         </>
                       )}
@@ -490,7 +492,7 @@ export default function TripDetailScreen() {
         icon="plus"
         style={styles.fab}
         onPress={openAddPlaceModal}
-        label="Добавить место"
+        label={t('trips.addPlace')}
       />
 
       {(() => {
@@ -520,7 +522,7 @@ export default function TripDetailScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text variant="titleLarge">Добавить место</Text>
+              <Text variant="titleLarge">{t('trips.addPlace')}</Text>
               <IconButton
                 icon="close"
                 onPress={() => setAddPlaceModalVisible(false)}
@@ -536,7 +538,7 @@ export default function TripDetailScreen() {
                 }}
                 style={styles.addNewButton}
               >
-                Создать новое место
+                {t('trips.createNewPlace')}
               </Button>
               {availablePlaces.map((place) => (
                 <List.Item
@@ -548,7 +550,7 @@ export default function TripDetailScreen() {
               ))}
               {availablePlaces.length === 0 && (
                 <Text variant="bodyMedium" style={styles.modalEmpty}>
-                  Все места уже добавлены или нет мест. Создайте новое.
+                  {t('trips.allPlacesAdded')}
                 </Text>
               )}
             </ScrollView>
@@ -566,6 +568,7 @@ function AddPhotoButton({
   tripPlaceId: number;
   onAdd: (id: number, source: 'gallery' | 'camera') => void;
 }) {
+  const { t } = useTranslation();
   const [menuVisible, setMenuVisible] = useState(false);
   return (
     <Menu
@@ -578,7 +581,7 @@ function AddPhotoButton({
           compact
           onPress={() => setMenuVisible(true)}
         >
-          Фото
+          {t('trips.photo')}
         </Button>
       }
     >
@@ -587,7 +590,7 @@ function AddPhotoButton({
           setMenuVisible(false);
           onAdd(tripPlaceId, 'camera');
         }}
-        title="Сделать фото"
+        title={t('places.takePhoto')}
         leadingIcon="camera"
       />
       <Menu.Item
@@ -595,7 +598,7 @@ function AddPhotoButton({
           setMenuVisible(false);
           onAdd(tripPlaceId, 'gallery');
         }}
-        title="Из галереи"
+        title={t('trips.fromGallery')}
         leadingIcon="image"
       />
     </Menu>

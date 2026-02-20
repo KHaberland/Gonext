@@ -3,8 +3,9 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, StyleSheet, View } from 'react-native';
-import { Button, IconButton, List, Text } from 'react-native-paper';
+import { Button, IconButton, Text, useTheme } from 'react-native-paper';
 import {
   playAudio,
   startRecording,
@@ -34,6 +35,8 @@ export function RecordingSection({
   onDelete,
   compact = false,
 }: RecordingSectionProps) {
+  const { t } = useTranslation();
+  const theme = useTheme();
   const [isRecording, setIsRecording] = useState(false);
   const [durationMs, setDurationMs] = useState(0);
   const [playingId, setPlayingId] = useState<number | null>(null);
@@ -50,8 +53,8 @@ export function RecordingSection({
       setDurationMs(0);
     } else {
       Alert.alert(
-        'Нет доступа',
-        'Разрешите доступ к микрофону в настройках приложения.'
+        t('recordings.noAccess'),
+        t('recordings.noAccessHint')
       );
     }
   }, []);
@@ -66,7 +69,7 @@ export function RecordingSection({
     if (uri) {
       await onRecordSaved(uri);
     } else {
-      Alert.alert('Ошибка', 'Не удалось сохранить запись');
+      Alert.alert(t('common.error'), t('recordings.errorSave'));
     }
   }, [onRecordSaved]);
 
@@ -101,7 +104,7 @@ export function RecordingSection({
         });
       } catch (e) {
         console.error('Ошибка воспроизведения:', e);
-        Alert.alert('Ошибка', 'Не удалось воспроизвести запись');
+        Alert.alert(t('common.error'), t('recordings.errorPlay'));
       }
     },
     [playingId]
@@ -109,10 +112,10 @@ export function RecordingSection({
 
   const handleDelete = useCallback(
     (r: Recording) => {
-      Alert.alert('Удалить запись?', '', [
-        { text: 'Отмена', style: 'cancel' },
+      Alert.alert(t('recordings.deleteConfirm'), '', [
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Удалить',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             if (playingId === r.id && soundRef.current) {
@@ -128,7 +131,7 @@ export function RecordingSection({
         },
       ]);
     },
-    [onDelete, playingId]
+    [onDelete, playingId, t]
   );
 
   return (
@@ -136,9 +139,16 @@ export function RecordingSection({
       <View style={styles.recordRow}>
         {isRecording ? (
           <>
-            <View style={styles.recordingInfo}>
-              <Text variant="bodyMedium" style={styles.recordingText}>
-                Запись: {formatDuration(durationMs)}
+            <View
+              style={[
+                styles.recordingBadge,
+                {
+                  backgroundColor: theme.colors.primary,
+                },
+              ]}
+            >
+              <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+                {t('recordings.recording')}: {formatDuration(durationMs)}
               </Text>
             </View>
             <Button
@@ -146,58 +156,78 @@ export function RecordingSection({
               icon="stop"
               onPress={handleStopRecording}
               buttonColor="#c62828"
+              style={styles.stopButton}
             >
-              Остановить
+              {t('recordings.stop')}
             </Button>
           </>
         ) : (
           <Button
-            mode="outlined"
+            mode="contained"
             icon="microphone"
             onPress={handleStartRecording}
-            style={compact ? undefined : styles.recordButton}
+            style={styles.recordButton}
           >
-            {compact ? 'Записать' : 'Голосовая запись'}
+            {compact ? t('recordings.record') : t('recordings.voiceRecording')}
           </Button>
         )}
       </View>
 
       {recordings.length > 0 && (
-        <View style={styles.list}>
-          <Text variant="labelMedium" style={styles.listTitle}>
-            Записи ({recordings.length})
-          </Text>
-          {recordings.map((r) => (
-            <List.Item
-              key={r.id}
-              title={
-                r.transcribedText
-                  ? r.transcribedText.slice(0, 50) + (r.transcribedText.length > 50 ? '…' : '')
-                  : `Запись от ${new Date(r.createdAt).toLocaleString('ru-RU', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}`
-              }
-              left={(props) => (
+        <View style={[styles.list, { borderTopColor: theme.colors.primary }]}>
+          <View
+            style={[
+              styles.listTitle,
+              { backgroundColor: theme.colors.primary },
+            ]}
+          >
+            <Text variant="labelLarge" style={{ color: theme.colors.onPrimary }}>
+              {t('recordings.recordingsCount', { count: recordings.length })}
+            </Text>
+          </View>
+          {recordings.map((r) => {
+            const labelText = r.transcribedText
+              ? r.transcribedText.slice(0, 50) + (r.transcribedText.length > 50 ? '…' : '')
+              : t('recordings.recordFrom', {
+                  date: new Date(r.createdAt).toLocaleString(undefined, {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                });
+            return (
+              <View
+                key={r.id}
+                style={[
+                  styles.recordingItem,
+                  { backgroundColor: theme.colors.primary },
+                ]}
+              >
                 <IconButton
                   icon={playingId === r.id ? 'stop' : 'play'}
-                  size={24}
+                  size={20}
                   onPress={() => handlePlay(r)}
-                  {...props}
+                  iconColor={theme.colors.onPrimary}
+                  style={styles.recordingIcon}
                 />
-              )}
-              right={(props) => (
+                <Text
+                  variant="labelLarge"
+                  numberOfLines={1}
+                  style={[styles.recordingLabelText, { color: theme.colors.onPrimary }]}
+                >
+                  {labelText}
+                </Text>
                 <IconButton
                   icon="delete"
-                  size={20}
+                  size={18}
                   onPress={() => handleDelete(r)}
-                  {...props}
+                  iconColor={theme.colors.onPrimary}
+                  style={styles.recordingIcon}
                 />
-              )}
-            />
-          ))}
+              </View>
+            );
+          })}
         </View>
       )}
     </View>
@@ -210,28 +240,49 @@ const styles = StyleSheet.create({
   },
   recordRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: 12,
     marginBottom: 8,
   },
-  recordingInfo: {
+  recordingBadge: {
     flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
   },
-  recordingText: {
-    color: '#c62828',
-    fontWeight: '500',
+  stopButton: {
+    minWidth: 100,
   },
   recordButton: {
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
+    flex: 1,
   },
   list: {
     marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopWidth: 2,
     paddingTop: 8,
   },
   listTitle: {
-    marginBottom: 4,
-    color: '#666',
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+  },
+  recordingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 20,
+  },
+  recordingLabelText: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  recordingIcon: {
+    margin: 0,
   },
 });

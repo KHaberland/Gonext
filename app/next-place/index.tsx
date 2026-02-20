@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Card, Text } from 'react-native-paper';
 import { formatDD } from '../../lib/coords';
@@ -8,6 +9,7 @@ import { openInNavigatorWithChoice } from '../../lib/navigator';
 
 export default function NextPlaceScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [data, setData] = useState<Awaited<ReturnType<typeof getNextPlace>>>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,28 +53,27 @@ export default function NextPlaceScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Следующее место" />
+        <Appbar.Content title={t('nextPlace.title')} />
       </Appbar.Header>
 
       {loading ? (
         <View style={styles.centered}>
-          <Text variant="bodyLarge">Загрузка...</Text>
+          <Text variant="bodyLarge">{t('common.loading')}</Text>
         </View>
       ) : !data ? (
         <View style={styles.centered}>
           <Text variant="titleMedium" style={styles.emptyTitle}>
-            Нет следующего места
+            {t('nextPlace.noNextPlace')}
           </Text>
           <Text variant="bodyMedium" style={styles.emptyText}>
-            Создайте поездку, отметьте её как текущую и добавьте места в маршрут. Либо все места уже
-            посещены.
+            {t('nextPlace.noNextPlaceHint')}
           </Text>
           <Button
             mode="outlined"
             onPress={() => router.push('/trips')}
             style={styles.emptyButton}
           >
-            К поездкам
+            {t('nextPlace.toTrips')}
           </Button>
         </View>
       ) : (
@@ -107,7 +108,7 @@ export default function NextPlaceScreen() {
                   onPress={handleOpenMap}
                   style={styles.button}
                 >
-                  Открыть на карте
+                  {t('nextPlace.openOnMap')}
                 </Button>
                 <Button
                   mode="outlined"
@@ -115,12 +116,12 @@ export default function NextPlaceScreen() {
                   onPress={handleOpenNavigator}
                   style={styles.button}
                 >
-                  Открыть в навигаторе
+                  {t('nextPlace.openInNavigator')}
                 </Button>
               </>
             ) : (
               <Text variant="bodySmall" style={styles.noCoordsHint}>
-                Координаты не заданы. Укажите их в редактировании места.
+                {t('nextPlace.noCoordsHint')}
               </Text>
             )}
             <Button
@@ -128,7 +129,7 @@ export default function NextPlaceScreen() {
               onPress={() => router.push(`/trips/${data.trip.id}`)}
               style={styles.button}
             >
-              Перейти к поездке
+              {t('nextPlace.goToTrip')}
             </Button>
           </View>
         </ScrollView>

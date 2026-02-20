@@ -1,14 +1,17 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Appbar, Divider, List, SegmentedButtons, Text } from 'react-native-paper';
 import { getAllTrips, getCurrentTrip, updateTrip } from '../../lib/db';
+import { LANGUAGES, setLanguage, type LanguageCode } from '../../lib/i18n';
 import { PRESET_COLORS, useThemeMode } from '../../lib/theme';
 import type { Trip } from '../../types';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { theme, themeMode, setThemeMode, primaryColor, setPrimaryColor } = useThemeMode();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [currentTripId, setCurrentTripId] = useState<number | null>(null);
@@ -58,27 +61,46 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Настройки" />
+        <Appbar.Content title={t('settings.title')} />
       </Appbar.Header>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <List.Section>
-          <List.Subheader>Внешний вид</List.Subheader>
+          <List.Subheader>{t('settings.language')}</List.Subheader>
           <Text variant="bodySmall" style={styles.hint}>
-            Выберите светлую или тёмную тему. В тёмной теме фоновое изображение отключается.
+            {t('settings.languageHint')}
+          </Text>
+          <View style={styles.themeRow}>
+            <SegmentedButtons
+              value={i18n.language?.startsWith('ru') ? 'ru' : 'en'}
+              onValueChange={(v) => setLanguage(v as LanguageCode)}
+              buttons={LANGUAGES.map(({ code, label }) => ({
+                value: code,
+                label,
+              }))}
+            />
+          </View>
+        </List.Section>
+
+        <Divider style={styles.divider} />
+
+        <List.Section>
+          <List.Subheader>{t('settings.appearance')}</List.Subheader>
+          <Text variant="bodySmall" style={styles.hint}>
+            {t('settings.appearanceHint')}
           </Text>
           <View style={styles.themeRow}>
             <SegmentedButtons
               value={themeMode}
               onValueChange={(v) => setThemeMode(v as 'light' | 'dark')}
               buttons={[
-                { value: 'light', label: 'Светлая', icon: 'white-balance-sunny' },
-                { value: 'dark', label: 'Тёмная', icon: 'moon-waning-crescent' },
+                { value: 'light', label: t('settings.light'), icon: 'white-balance-sunny' },
+                { value: 'dark', label: t('settings.dark'), icon: 'moon-waning-crescent' },
               ]}
             />
           </View>
           <Text variant="bodySmall" style={styles.hint}>
-            Основной цвет темы:
+            {t('settings.themeColor')}
           </Text>
           <View style={styles.colorRow}>
             {PRESET_COLORS.map((color) => (
@@ -101,20 +123,20 @@ export default function SettingsScreen() {
         <Divider style={styles.divider} />
 
         <List.Section>
-          <List.Subheader>Текущая поездка</List.Subheader>
+          <List.Subheader>{t('settings.currentTrip')}</List.Subheader>
           <Text variant="bodySmall" style={styles.hint}>
-            Выберите поездку, для которой показывается «Следующее место».
+            {t('settings.currentTripHint')}
           </Text>
           {loading ? (
             <List.Item
-              title="Загрузка..."
+              title={t('common.loading')}
               left={(props) => <List.Icon {...props} icon="progress-clock" />}
               right={() => <ActivityIndicator size="small" />}
             />
           ) : trips.length === 0 ? (
             <List.Item
-              title="Нет поездок"
-              description="Создайте поездку в разделе «Поездки»"
+              title={t('settings.noTrips')}
+              description={t('settings.noTripsHint')}
               left={(props) => <List.Icon {...props} icon="map-marker-outline" />}
               onPress={() => router.push('/trips')}
             />
@@ -124,7 +146,7 @@ export default function SettingsScreen() {
                 <List.Item
                   key={trip.id}
                   title={trip.title}
-                  description={trip.startDate ? `с ${trip.startDate}` : undefined}
+                  description={trip.startDate ? t('trips.fromDate', { date: trip.startDate.slice(0, 10) }) : undefined}
                   left={(props) => (
                     <List.Icon
                       {...props}
@@ -136,7 +158,7 @@ export default function SettingsScreen() {
               ))}
               {currentTripId !== null && (
                 <List.Item
-                  title="Сбросить текущую поездку"
+                  title={t('settings.resetCurrentTrip')}
                   left={(props) => <List.Icon {...props} icon="close-circle-outline" />}
                   onPress={handleClearCurrentTrip}
                 />
@@ -148,14 +170,14 @@ export default function SettingsScreen() {
         <Divider style={styles.divider} />
 
         <List.Section>
-          <List.Subheader>О приложении</List.Subheader>
+          <List.Subheader>{t('settings.about')}</List.Subheader>
           <List.Item
             title="GoNext"
-            description="Дневник туриста — планирование поездок и ведение дневника путешествий. Работает полностью офлайн."
+            description={t('settings.aboutDescription')}
             left={(props) => <List.Icon {...props} icon="information-outline" />}
           />
           <List.Item
-            title="Версия"
+            title={t('settings.version')}
             description={appVersion}
             left={(props) => <List.Icon {...props} icon="tag-outline" />}
           />

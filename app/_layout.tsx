@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ImageBackground, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, PaperProvider, Text } from 'react-native-paper';
 import { initDatabase } from '../lib/db';
+import { initI18n } from '../lib/i18n';
 import { ThemeProvider, useThemeMode } from '../lib/theme';
 
 const BG_IMAGE = require('../assets/backgrounds/gonext-bg.png');
@@ -17,10 +18,10 @@ export default function RootLayout() {
 
 function RootLayoutContent() {
   const { theme, isDark } = useThemeMode();
-  const [dbReady, setDbReady] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    initDatabase().then(() => setDbReady(true));
+    Promise.all([initI18n(), initDatabase()]).then(() => setReady(true));
   }, []);
 
   const backgroundStyle = isDark
@@ -36,13 +37,13 @@ function RootLayoutContent() {
       </ImageBackground>
     );
 
-  if (!dbReady) {
+  if (!ready) {
     return (
       <PaperProvider theme={theme}>
         {renderContent(
           <View style={styles.loading}>
             <ActivityIndicator size="large" />
-            <Text variant="bodyLarge">Загрузка...</Text>
+            <Text variant="bodyLarge">Loading...</Text>
           </View>
         )}
       </PaperProvider>

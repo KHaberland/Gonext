@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Appbar, Button, Text } from 'react-native-paper';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
@@ -26,6 +27,7 @@ function hasValidCoords(place: Place): boolean {
 export default function PlaceMapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const placeId = parseInt(id ?? '0', 10);
   const [place, setPlace] = useState<Place | null>(null);
 
@@ -48,10 +50,10 @@ export default function PlaceMapScreen() {
       <View style={styles.container}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => router.back()} />
-          <Appbar.Content title="Карта" />
+          <Appbar.Content title={t('map.title')} />
         </Appbar.Header>
         <View style={styles.centered}>
-          <Text variant="bodyLarge">Загрузка...</Text>
+          <Text variant="bodyLarge">{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -62,12 +64,12 @@ export default function PlaceMapScreen() {
       <View style={styles.container}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => router.back()} />
-          <Appbar.Content title="Карта" />
+          <Appbar.Content title={t('map.title')} />
         </Appbar.Header>
         <View style={styles.centered}>
-          <Text variant="bodyLarge">Координаты не заданы.</Text>
+          <Text variant="bodyLarge">{t('map.noCoords')}</Text>
           <Text variant="bodyMedium" style={styles.hint}>
-            Укажите широту и долготу в редактировании места.
+            {t('map.noCoordsHint')}
           </Text>
         </View>
       </View>
@@ -133,7 +135,7 @@ export default function PlaceMapScreen() {
           onPress={handleOpenNavigator}
           style={styles.navButton}
         >
-          Открыть в навигаторе
+          {t('map.openInNavigator')}
         </Button>
       </View>
     </View>

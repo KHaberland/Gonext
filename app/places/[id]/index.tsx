@@ -1,5 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   ScrollView,
@@ -33,6 +34,7 @@ import { RecordingSection } from '../../../components/RecordingSection';
 export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const placeId = parseInt(id ?? '0', 10);
   const [place, setPlace] = useState<Place | null>(null);
   const [photos, setPhotos] = useState<PlacePhoto[]>([]);
@@ -72,7 +74,7 @@ export default function PlaceDetailScreen() {
         await loadData();
       } catch (e) {
         console.error('Ошибка добавления фото:', e);
-        Alert.alert('Ошибка', 'Не удалось добавить фото');
+        Alert.alert(t('common.error'), t('places.errorAddPhoto'));
       }
     }
   };
@@ -81,10 +83,10 @@ export default function PlaceDetailScreen() {
     photoId: number,
     onAfterDelete?: () => void
   ) => {
-    Alert.alert('Удалить фото?', '', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('places.deletePhotoConfirm'), '', [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Удалить',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -106,10 +108,10 @@ export default function PlaceDetailScreen() {
       <View style={styles.container}>
         <Appbar.Header>
           <Appbar.BackAction onPress={() => router.back()} />
-          <Appbar.Content title="Место" />
+          <Appbar.Content title={t('places.place')} />
         </Appbar.Header>
         <View style={styles.centered}>
-          <Text variant="bodyLarge">Загрузка...</Text>
+          <Text variant="bodyLarge">{t('common.loading')}</Text>
         </View>
       </View>
     );
@@ -135,7 +137,7 @@ export default function PlaceDetailScreen() {
               setMenuVisible(false);
               router.push(`/places/${placeId}/edit`);
             }}
-            title="Редактировать"
+            title={t('common.edit')}
             leadingIcon="pencil"
           />
         </Menu>
@@ -153,12 +155,12 @@ export default function PlaceDetailScreen() {
             <View style={styles.badges}>
               {place.visitLater && (
                 <Text variant="labelSmall" style={styles.badge}>
-                  Посетить позже
+                  {t('places.visitLater')}
                 </Text>
               )}
               {place.liked && (
                 <Text variant="labelSmall" style={styles.badge}>
-                  Понравилось
+                  {t('places.liked')}
                 </Text>
               )}
             </View>
@@ -174,33 +176,33 @@ export default function PlaceDetailScreen() {
           {hasCoords && (
             <>
               <Button
-                mode="outlined"
+                mode="contained"
                 icon="map-marker"
                 onPress={() => router.push(`/places/${placeId}/map`)}
                 style={styles.button}
               >
-                На карте
+                {t('places.onMap')}
               </Button>
               <Button
-                mode="outlined"
+                mode="contained"
                 icon="navigation"
                 onPress={() =>
                   openInNavigatorWithChoice(place.lat, place.lon, place.name)
                 }
                 style={styles.button}
               >
-                Открыть в навигаторе
+                {t('places.openInNavigator')}
               </Button>
             </>
           )}
           {photos.length > 0 && (
           <Button
-            mode="outlined"
+            mode="contained"
             icon="image-multiple"
             onPress={() => setViewingPhotos(true)}
             style={styles.button}
           >
-            Посмотреть фото ({photos.length})
+            {t('places.viewPhotos')} ({photos.length})
           </Button>
           )}
           <Menu
@@ -208,23 +210,23 @@ export default function PlaceDetailScreen() {
             onDismiss={() => setPhotoMenuVisible(false)}
             anchor={
               <Button
-                mode="outlined"
+                mode="contained"
                 icon="camera"
                 onPress={() => setPhotoMenuVisible(true)}
                 style={styles.button}
               >
-                {photos.length > 0 ? 'Ещё фото' : 'Добавить фото'}
+                {photos.length > 0 ? t('places.morePhotos') : t('places.addPhoto')}
               </Button>
             }
           >
             <Menu.Item
               onPress={() => handleAddPhoto('camera')}
-              title="Сделать фото"
+              title={t('places.takePhoto')}
               leadingIcon="camera"
             />
             <Menu.Item
               onPress={() => handleAddPhoto('gallery')}
-              title="Выбрать из галереи"
+              title={t('places.chooseFromGallery')}
               leadingIcon="image"
             />
           </Menu>

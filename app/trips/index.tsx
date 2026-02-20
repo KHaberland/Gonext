@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Appbar, Chip, FAB, List, Text } from 'react-native-paper';
 import { getAllTrips } from '../../lib/db';
@@ -13,6 +14,7 @@ function formatDateRange(start: string, end: string): string {
 
 export default function TripsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +47,7 @@ export default function TripsScreen() {
     <View style={styles.container}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Поездки" />
+        <Appbar.Content title={t('trips.title')} />
       </Appbar.Header>
 
       <ScrollView
@@ -57,11 +59,11 @@ export default function TripsScreen() {
       >
         {loading ? (
           <Text variant="bodyLarge" style={styles.empty}>
-            Загрузка...
+            {t('common.loading')}
           </Text>
         ) : trips.length === 0 ? (
           <Text variant="bodyLarge" style={styles.empty}>
-            Нет поездок. Создайте первую поездку.
+            {t('trips.noTrips')}
           </Text>
         ) : (
           trips.map((trip) => (
@@ -76,7 +78,7 @@ export default function TripsScreen() {
                 <View style={styles.rightContent}>
                   {trip.current && (
                     <Chip compact style={styles.chip}>
-                      Текущая
+                      {t('trips.current')}
                     </Chip>
                   )}
                   <List.Icon {...props} icon="chevron-right" />
@@ -93,7 +95,7 @@ export default function TripsScreen() {
         icon="plus"
         style={styles.fab}
         onPress={() => router.push('/trips/new')}
-        label="Создать поездку"
+        label={t('trips.createTrip')}
       />
     </View>
   );
