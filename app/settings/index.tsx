@@ -1,13 +1,15 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Appbar, Divider, List, Text } from 'react-native-paper';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Appbar, Divider, List, SegmentedButtons, Text } from 'react-native-paper';
 import { getAllTrips, getCurrentTrip, updateTrip } from '../../lib/db';
+import { PRESET_COLORS, useThemeMode } from '../../lib/theme';
 import type { Trip } from '../../types';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { theme, themeMode, setThemeMode, primaryColor, setPrimaryColor } = useThemeMode();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [currentTripId, setCurrentTripId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,44 @@ export default function SettingsScreen() {
       </Appbar.Header>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <List.Section>
+          <List.Subheader>Внешний вид</List.Subheader>
+          <Text variant="bodySmall" style={styles.hint}>
+            Выберите светлую или тёмную тему. В тёмной теме фоновое изображение отключается.
+          </Text>
+          <View style={styles.themeRow}>
+            <SegmentedButtons
+              value={themeMode}
+              onValueChange={(v) => setThemeMode(v as 'light' | 'dark')}
+              buttons={[
+                { value: 'light', label: 'Светлая', icon: 'white-balance-sunny' },
+                { value: 'dark', label: 'Тёмная', icon: 'moon-waning-crescent' },
+              ]}
+            />
+          </View>
+          <Text variant="bodySmall" style={styles.hint}>
+            Основной цвет темы:
+          </Text>
+          <View style={styles.colorRow}>
+            {PRESET_COLORS.map((color) => (
+              <Pressable
+                key={color}
+                onPress={() => setPrimaryColor(color)}
+                style={[
+                  styles.colorCircle,
+                  { backgroundColor: color },
+                  primaryColor === color && {
+                    borderWidth: 3,
+                    borderColor: theme.colors.onSurface,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </List.Section>
+
+        <Divider style={styles.divider} />
+
         <List.Section>
           <List.Subheader>Текущая поездка</List.Subheader>
           <Text variant="bodySmall" style={styles.hint}>
@@ -139,6 +179,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
     color: '#666',
+  },
+  themeRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  colorRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  colorCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   divider: {
     marginVertical: 16,
