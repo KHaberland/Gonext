@@ -4,9 +4,27 @@
     "slug": "gonext",
     "version": "1.0.0",
     "scheme": "gonext",
-    "platforms": ["ios", "android"],
-    "ios": { "bundleIdentifier": "com.gonext.app" },
-    "android": { "package": "com.gonext.app" },
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.gonext.app"
+    },
+    "android": {
+      "package": "com.gonext.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
     "plugins": [
       "expo-asset",
       "expo-router",
@@ -23,6 +41,12 @@
           "microphonePermission": "Доступ к микрофону для голосовых записей к местам и поездкам"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e6769d65-9530-456f-b69c-dc56efef144c"
+      }
+    }
   }
 }
